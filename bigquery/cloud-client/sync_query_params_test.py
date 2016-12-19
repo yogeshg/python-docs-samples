@@ -15,6 +15,14 @@
 import sync_query_params
 
 
+def test_sync_query_array_params(cloud_config, capsys):
+    sync_query_params.sync_query_array_params(
+        gender='M',
+        states=['WA', 'WI', 'WV', 'WY'])
+    out, _ = capsys.readouterr()
+    assert 'James' in out
+
+
 def test_sync_query_named_params(cloud_config, capsys):
     sync_query_params.sync_query_named_params(
         corpus='romeoandjuliet',

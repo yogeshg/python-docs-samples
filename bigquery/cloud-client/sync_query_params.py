@@ -90,31 +90,68 @@ def sync_query_named_params(corpus, min_word_count):
     print_results(query_results)
 
 
+def sync_query_array_params(gender, states):
+    client = bigquery.Client()
+    query_results = client.run_sync_query(
+        """SELECT name, sum(number) as count
+        FROM `bigquery-public-data.usa_names.usa_1910_2013`
+        WHERE gender = @gender
+        AND state IN UNNEST(@states)
+        GROUP BY name
+        ORDER BY count DESC
+        LIMIT 10;
+        """,
+        query_parameters=(
+            bigquery.ScalarQueryParameter('gender', 'STRING', gender),
+            bigquery.ArrayQueryParameter('states', 'STRING', states)))
+    query_results.use_legacy_sql = False
+    query_results.run()
+    print_results(query_results)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument(
+    subparsers = parser.add_subparsers(dest='sample', help='samples')
+    named_parser = subparsers.add_parser(
+        'named',
+        help='Run a query with named parameters.')
+    named_parser.add_argument(
         'corpus',
         help='Corpus to search from Shakespeare dataset.')
-    parser.add_argument(
+    named_parser.add_argument(
         'min_word_count',
         help='Minimum count of words to query.',
         type=int)
-
-    params_type_parser = parser.add_mutually_exclusive_group(required=False)
-    params_type_parser.add_argument(
-        '--use-named-params',
-        dest='use_named_params',
-        action='store_true')
-    params_type_parser.add_argument(
-        '--use-positional-params',
-        dest='use_named_params',
-        action='store_false')
-    parser.set_defaults(use_named_params=False)
+    positional_parser = subparsers.add_parser(
+        'positional',
+        help='Run a query with positional parameters.')
+    positional_parser.add_argument(
+        'corpus',
+        help='Corpus to search from Shakespeare dataset.')
+    positional_parser.add_argument(
+        'min_word_count',
+        help='Minimum count of words to query.',
+        type=int)
+    array_parser = subparsers.add_parser(
+        'array',
+        help='Run a query with an array parameter.')
+    array_parser.add_argument(
+        'gender',
+        choices=['F', 'M'],
+        help='Gender of baby in the Social Security baby names database.')
+    array_parser.add_argument(
+        'states',
+        help='U.S. States to consider for popular baby names.',
+        nargs='+')
     args = parser.parse_args()
 
-    if args.use_named_params:
+    if args.sample == 'named':
         sync_query_named_params(args.corpus, args.min_word_count)
-    else:
+    elif args.sample == 'positional':
         sync_query_positional_params(args.corpus, args.min_word_count)
+    elif args.sample == 'array':
+        sync_query_array_params(args.gender, args.states)
+    else:
+        print('Unexpected value for sample')
