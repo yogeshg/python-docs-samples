@@ -23,7 +23,7 @@ def test_sync_query_array_params(cloud_config, capsys):
     assert 'James' in out
 
 
-def test_sync_query_array_params(cloud_config, capsys):
+def test_sync_query_timestamp_params(cloud_config, capsys):
     sync_query_params.sync_query_timestamp_params()
     out, _ = capsys.readouterr()
     assert '2016-12-07 09:00:00' in out
