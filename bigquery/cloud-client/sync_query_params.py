@@ -24,7 +24,9 @@ Example invocation:
 """
 
 import argparse
+import datetime
 
+import pytz
 from google.cloud import bigquery
 
 
@@ -109,6 +111,20 @@ def sync_query_array_params(gender, states):
     print_results(query_results)
 
 
+def sync_query_timestamp_params():
+    client = bigquery.Client()
+    query_results = client.run_sync_query(
+            'SELECT TIMESTAMP_ADD(@ts_value, INTERVAL 1 HOUR);',
+        query_parameters=[
+            bigquery.ScalarQueryParameter(
+                'ts_value',
+                'TIMESTAMP',
+                datetime.datetime(2016, 12, 7, 8, tzinfo=pytz.UTC))])
+    query_results.use_legacy_sql = False
+    query_results.run()
+    print_results(query_results)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -145,6 +161,9 @@ if __name__ == '__main__':
         'states',
         help='U.S. States to consider for popular baby names.',
         nargs='+')
+    timestamp_parser = subparsers.add_parser(
+        'timestamp',
+        help='Run a query with a timestamp parameter.')
     args = parser.parse_args()
 
     if args.sample == 'named':
@@ -153,5 +172,7 @@ if __name__ == '__main__':
         sync_query_positional_params(args.corpus, args.min_word_count)
     elif args.sample == 'array':
         sync_query_array_params(args.gender, args.states)
+    elif args.sample == 'timestamp':
+        sync_query_timestamp_params()
     else:
         print('Unexpected value for sample')
