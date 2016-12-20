@@ -111,7 +111,7 @@ def sync_query_array_params(gender, states):
     print_results(query_results)
 
 
-def sync_query_timestamp_params():
+def sync_query_timestamp_params(year, month, day, hour, minute):
     client = bigquery.Client()
     query_results = client.run_sync_query(
             'SELECT TIMESTAMP_ADD(@ts_value, INTERVAL 1 HOUR);',
@@ -119,7 +119,22 @@ def sync_query_timestamp_params():
             bigquery.ScalarQueryParameter(
                 'ts_value',
                 'TIMESTAMP',
-                datetime.datetime(2016, 12, 7, 8, tzinfo=pytz.UTC))])
+                datetime.datetime(
+                    year, month, day, hour, minute, tzinfo=pytz.UTC))])
+    query_results.use_legacy_sql = False
+    query_results.run()
+    print_results(query_results)
+
+
+def sync_query_struct_params(x, y):
+    client = bigquery.Client()
+    query_results = client.run_sync_query(
+        'SELECT @struct_value AS s;',
+        query_parameters=[
+            bigquery.StructQueryParameter(
+                'struct_value',
+                bigquery.ScalarQueryParameter('x', 'INT64', x),
+                bigquery.ScalarQueryParameter('y', 'STRING', y))])
     query_results.use_legacy_sql = False
     query_results.run()
     print_results(query_results)
@@ -164,6 +179,16 @@ if __name__ == '__main__':
     timestamp_parser = subparsers.add_parser(
         'timestamp',
         help='Run a query with a timestamp parameter.')
+    timestamp_parser.add_argument('year', type=int)
+    timestamp_parser.add_argument('month', type=int)
+    timestamp_parser.add_argument('day', type=int)
+    timestamp_parser.add_argument('hour', type=int)
+    timestamp_parser.add_argument('minute', type=int)
+    struct_parser = subparsers.add_parser(
+        'struct',
+        help='Run a query with a struct parameter.')
+    struct_parser.add_argument('x', help='Integer for x', type=int)
+    struct_parser.add_argument('y', help='String for y')
     args = parser.parse_args()
 
     if args.sample == 'named':
@@ -173,6 +198,9 @@ if __name__ == '__main__':
     elif args.sample == 'array':
         sync_query_array_params(args.gender, args.states)
     elif args.sample == 'timestamp':
-        sync_query_timestamp_params()
+        sync_query_timestamp_params(
+                args.year, args.month, args.day, args.hour, args.minute)
+    elif args.sample == 'struct':
+        sync_query_struct_params(args.x, args.y)
     else:
         print('Unexpected value for sample')

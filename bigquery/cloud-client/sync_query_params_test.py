@@ -23,12 +23,6 @@ def test_sync_query_array_params(cloud_config, capsys):
     assert 'James' in out
 
 
-def test_sync_query_timestamp_params(cloud_config, capsys):
-    sync_query_params.sync_query_timestamp_params()
-    out, _ = capsys.readouterr()
-    assert '2016-12-07 09:00:00' in out
-
-
 def test_sync_query_named_params(cloud_config, capsys):
     sync_query_params.sync_query_named_params(
         corpus='romeoandjuliet',
@@ -43,3 +37,16 @@ def test_sync_query_positional_params(cloud_config, capsys):
         min_word_count=100)
     out, _ = capsys.readouterr()
     assert 'love' in out
+
+
+def test_sync_query_struct_params(cloud_config, capsys):
+    sync_query_params.sync_query_struct_params(765, "hello world")
+    out, _ = capsys.readouterr()
+    assert '765' in out
+    assert 'hello world' in out
+
+
+def test_sync_query_timestamp_params(cloud_config, capsys):
+    sync_query_params.sync_query_timestamp_params(2016, 12, 7, 8, 0)
+    out, _ = capsys.readouterr()
+    assert '2016-12-07 09:00:00' in out
