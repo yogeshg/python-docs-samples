@@ -26,8 +26,8 @@ Example invocation:
 import argparse
 import datetime
 
-import pytz
 from google.cloud import bigquery
+import pytz
 
 
 def print_results(query_results):
@@ -48,13 +48,14 @@ def print_results(query_results):
 
 def sync_query_positional_params(corpus, min_word_count):
     client = bigquery.Client()
+    query = """SELECT word, word_count
+    FROM `bigquery-public-data.samples.shakespeare`
+    WHERE corpus = ?
+    AND word_count >= ?
+    ORDER BY word_count DESC;
+    """
     query_results = client.run_sync_query(
-        """SELECT word, word_count
-        FROM `bigquery-public-data.samples.shakespeare`
-        WHERE corpus = ?
-        AND word_count >= ?
-        ORDER BY word_count DESC;
-        """,
+        query,
         query_parameters=(
             bigquery.ScalarQueryParameter(
                 # Set the name to None to use positional parameters (? symbol
@@ -74,13 +75,14 @@ def sync_query_positional_params(corpus, min_word_count):
 
 def sync_query_named_params(corpus, min_word_count):
     client = bigquery.Client()
+    query = """SELECT word, word_count
+    FROM `bigquery-public-data.samples.shakespeare`
+    WHERE corpus = @corpus
+    AND word_count >= @min_word_count
+    ORDER BY word_count DESC;
+    """
     query_results = client.run_sync_query(
-        """SELECT word, word_count
-        FROM `bigquery-public-data.samples.shakespeare`
-        WHERE corpus = @corpus
-        AND word_count >= @min_word_count
-        ORDER BY word_count DESC;
-        """,
+        query,
         query_parameters=(
             bigquery.ScalarQueryParameter('corpus', 'STRING', corpus),
             bigquery.ScalarQueryParameter(
@@ -94,15 +96,16 @@ def sync_query_named_params(corpus, min_word_count):
 
 def sync_query_array_params(gender, states):
     client = bigquery.Client()
+    query = """SELECT name, sum(number) as count
+    FROM `bigquery-public-data.usa_names.usa_1910_2013`
+    WHERE gender = @gender
+    AND state IN UNNEST(@states)
+    GROUP BY name
+    ORDER BY count DESC
+    LIMIT 10;
+    """
     query_results = client.run_sync_query(
-        """SELECT name, sum(number) as count
-        FROM `bigquery-public-data.usa_names.usa_1910_2013`
-        WHERE gender = @gender
-        AND state IN UNNEST(@states)
-        GROUP BY name
-        ORDER BY count DESC
-        LIMIT 10;
-        """,
+        query,
         query_parameters=(
             bigquery.ScalarQueryParameter('gender', 'STRING', gender),
             bigquery.ArrayQueryParameter('states', 'STRING', states)))
@@ -113,8 +116,9 @@ def sync_query_array_params(gender, states):
 
 def sync_query_timestamp_params(year, month, day, hour, minute):
     client = bigquery.Client()
+    query = 'SELECT TIMESTAMP_ADD(@ts_value, INTERVAL 1 HOUR);'
     query_results = client.run_sync_query(
-            'SELECT TIMESTAMP_ADD(@ts_value, INTERVAL 1 HOUR);',
+        query,
         query_parameters=[
             bigquery.ScalarQueryParameter(
                 'ts_value',
@@ -128,8 +132,9 @@ def sync_query_timestamp_params(year, month, day, hour, minute):
 
 def sync_query_struct_params(x, y):
     client = bigquery.Client()
+    query = 'SELECT @struct_value AS s;'
     query_results = client.run_sync_query(
-        'SELECT @struct_value AS s;',
+        query,
         query_parameters=[
             bigquery.StructQueryParameter(
                 'struct_value',
