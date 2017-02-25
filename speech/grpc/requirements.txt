@@ -1,4 +1,4 @@
-grpcio==1.1.0
+grpcio==1.1.3
 PyAudio==0.2.10
 proto-google-cloud-speech-v1beta1==0.15.1
 six==1.10.0
